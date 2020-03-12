@@ -104,7 +104,7 @@ public class DiskBinaryTreeSet<E extends Serializable & Comparable<E>> implement
     private long getLeftPointer(long startAddress) throws IOException {
         if (startAddress < 0)
             return -1;
-            
+
         long curPos = randomAccessFile.getFilePointer();
         randomAccessFile.seek(startAddress);
         long lp = randomAccessFile.readLong();
@@ -140,7 +140,7 @@ public class DiskBinaryTreeSet<E extends Serializable & Comparable<E>> implement
     private int getHeightOfSubtree(long startAddress) throws IOException {
         if (startAddress < 0)
             return -1;
-        
+
         long curPos = randomAccessFile.getFilePointer();
         randomAccessFile.seek(startAddress+16);
         int hos = randomAccessFile.readInt();
@@ -158,7 +158,7 @@ public class DiskBinaryTreeSet<E extends Serializable & Comparable<E>> implement
     private int getPayloadSize(long startAddress) throws IOException {
         if (startAddress < 0)
             return -1;
-        
+
         long curPos = randomAccessFile.getFilePointer();
         randomAccessFile.seek(startAddress+20);
         int ps = randomAccessFile.readInt();
@@ -204,8 +204,6 @@ public class DiskBinaryTreeSet<E extends Serializable & Comparable<E>> implement
             EXACT_ADDRESS, PARENT_ADDRESS_LEFT, PARENT_ADDRESS_RIGHT, EMPTY_ROOT_ADDRESS;
         }
 
-        ;
-
         public final Description description;
 
         public AddressDescriptor(Stack<Long> addressStack, Description description) {
@@ -225,7 +223,7 @@ public class DiskBinaryTreeSet<E extends Serializable & Comparable<E>> implement
     private AddressDescriptor findAddressForValue(E value) throws IOException, ClassNotFoundException {
         Stack<Long> addressStack = new Stack<>();
         addressStack.push(getRootAddress());
-        
+
         if (getSize() == 0) {
             return new AddressDescriptor(addressStack, AddressDescriptor.Description.EMPTY_ROOT_ADDRESS);
         }
@@ -267,7 +265,7 @@ public class DiskBinaryTreeSet<E extends Serializable & Comparable<E>> implement
             setHeightOfSubtree(getRootAddress(), Math.max(getHeightOfSubtree(getLeftPointer(getRootAddress())), getHeightOfSubtree(getRightPointer(getRootAddress())))+1);
         } else {
             // parentAddress is an actual parent node's address. We first need to know which leg of parentAddress to be changing.
-            
+
             if (getLeftPointer(parentAddress) == axisAddress) {
                 // Left leg is "root" to be changing
                 setLeftPointer(parentAddress, getLeftPointer(axisAddress));
@@ -303,7 +301,7 @@ public class DiskBinaryTreeSet<E extends Serializable & Comparable<E>> implement
             setHeightOfSubtree(getRootAddress(), Math.max(getHeightOfSubtree(getLeftPointer(getRootAddress())), getHeightOfSubtree(getRightPointer(getRootAddress())))+1);
         } else {
             // parentAddress is an actual parent node's address. We first need to know which leg of parentAddress to be changing.
-            
+
             if (getLeftPointer(parentAddress) == axisAddress) {
                 // Left leg is "root" to be changing
                 setLeftPointer(parentAddress, getRightPointer(axisAddress));
@@ -327,9 +325,7 @@ public class DiskBinaryTreeSet<E extends Serializable & Comparable<E>> implement
     }
 
     /**
-     * Traverse back up the tree accodring to the stack in (usu. from {@code addressDescriptor}), update all relevant heights, and perform any rebalancing actions needed.
-     *
-     * @param addressStack
+     * Traverse back up the tree according to the stack in (usu. from {@code addressDescriptor}), update all relevant heights, and perform any rebalancing actions needed.
      */
     private void updateHeightsAndBalance(Stack<Long> addressStack) throws IOException {
         while (!addressStack.isEmpty()) {
@@ -368,6 +364,7 @@ public class DiskBinaryTreeSet<E extends Serializable & Comparable<E>> implement
         }
     }
 
+    @Override
     public boolean add(E value) {
         try {
             AddressDescriptor addressDescriptor = findAddressForValue(value);
@@ -424,6 +421,7 @@ public class DiskBinaryTreeSet<E extends Serializable & Comparable<E>> implement
         }
     }
 
+    @Override
     public boolean contains(Object o) {
         try {
             E value = (E) o;
@@ -436,6 +434,7 @@ public class DiskBinaryTreeSet<E extends Serializable & Comparable<E>> implement
         }
     }
 
+    @Override
     public int size() {
         long actual = actualSize();
         return (int) Math.min(actual, Integer.MAX_VALUE);
@@ -449,6 +448,7 @@ public class DiskBinaryTreeSet<E extends Serializable & Comparable<E>> implement
         }
     }
 
+    @Override
     public boolean isEmpty() {
         try {
             return getSize() == 0;
@@ -457,6 +457,7 @@ public class DiskBinaryTreeSet<E extends Serializable & Comparable<E>> implement
         }
     }
 
+    @Override
     public boolean addAll(Collection<? extends E> collection) {
         boolean anySucceed = false;
         for (E value : collection) {
@@ -465,39 +466,48 @@ public class DiskBinaryTreeSet<E extends Serializable & Comparable<E>> implement
         return anySucceed;
     }
 
+    @Override
     public boolean remove(Object o) {
         throw new UnsupportedOperationException("Not implemented! Cannot remove from DiskBinaryTreeSet!");
     }
 
+    @Override
     public Iterator<E> iterator() {
         throw new UnsupportedOperationException("Not yet implemented!");
     }
 
+    @Override
     public boolean removeAll(Collection<?> collection) {
         throw new UnsupportedOperationException("Not implemented! Cannot remove from DiskBinaryTreeSet!");
     }
 
+    @Override
     public boolean retainAll(Collection<?> collection) {
         throw new UnsupportedOperationException("Not implemented! Cannot remove from DiskBinaryTreeSet!");
     }
 
+    @Override
     public boolean containsAll(Collection<?> collection) {
         throw new UnsupportedOperationException("Not yet implemented!");
     }
 
     // Can't remove from DiskBinaryTreeSet, but can delete the backing file to clear it
+    @Override
     public void clear() {
         throw new UnsupportedOperationException("Not yet implemented!");
     }
 
+    @Override
     public Object[] toArray() {
         throw new UnsupportedOperationException("Not yet implemented!");
     }
 
+    @Override
     public <A> A[] toArray(A[] a) {
         throw new UnsupportedOperationException("Not yet implemented!");
     }
 
+    @Override
     public void close() throws IOException {
         randomAccessFile.close();
     }
