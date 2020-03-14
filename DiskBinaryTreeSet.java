@@ -325,7 +325,7 @@ public class DiskBinaryTreeSet<E extends Serializable & Comparable<E>> implement
     }
 
     /**
-     * Traverse back up the tree according to the stack in (usu. from {@code addressDescriptor}), update all relevant heights, and perform any rebalancing actions needed.
+     * Traverse back up the tree according to the stack (usu. from {@code addressDescriptor}), update all relevant heights, and perform any rebalancing actions needed.
      */
     private void updateHeightsAndBalance(Stack<Long> addressStack) throws IOException {
         while (!addressStack.isEmpty()) {
