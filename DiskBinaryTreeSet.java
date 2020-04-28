@@ -505,6 +505,46 @@ public class DiskBinaryTreeSet<E extends Serializable & Comparable<E>> implement
         }
     }
 
+    private E ceilingRec(long currentAddress, E value) throws IOException, ClassNotFoundException {
+        if (currentAddress == -1) {
+            // No subtree here.
+            return null;
+        }
+        E currentValue = getPayloadObject(currentAddress);
+        if (currentValue.compareTo(value) < 0) {
+            // We are smaller than value, so it could not be us, but it could be someone 
+            // in our right subtree. If our right subtree's got no answer, then we also have no answer.
+            return ceilingRec(getRightPointer(currentAddress), value); 
+        } else if (currentValue.compareTo(value) > 0) {
+            // Current value is too big, it could be us, but it could also be in our left subtree.
+            E valLeft = ceilingRec(getLeftPointer(currentAddress), value);
+            if (valLeft == null) {
+                // We're the answer.
+                return currentValue;
+            } else {
+                // Better answer was found in our left subtree.
+                return valLeft;
+            }
+        } else {
+            // Exact match. We are the answer.
+            return currentValue;
+        }
+    }
+
+    public E ceiling(E value) {
+        try {
+            if (isEmpty()) {
+                return null;
+            }
+
+            return ceilingRec(getRootAddress(), value);
+        } catch (ClassNotFoundException exc) {
+            throw new IllegalStateException("Failed to parse node payload, cannot recover.");
+        } catch (IOException exc) {
+            throw new IllegalStateException("Failed to access tree on disk, cannot recover.");
+        }
+    }
+
     public E first() {
         try {
             if (isEmpty()) {
@@ -661,14 +701,14 @@ public class DiskBinaryTreeSet<E extends Serializable & Comparable<E>> implement
         Random r = new Random();
         for (int n = 0; n < 5; n++) {
             for (int i = 0; i < 250; i++) {
-                int rand = r.nextInt();
+                int rand = 50+r.nextInt(250);
                 System.out.println("Inserting " + rand);
                 treeSet.add(BigInteger.valueOf(rand));
                 diskBinaryTreeSet.add(BigInteger.valueOf(rand));
             }
 
             for (int i = 0; i < 1000; i++) {
-                int rand = r.nextInt();
+                int rand = r.nextInt(350);
                 System.out.print("Querying higher of " + rand + "...");
                 BigInteger tsv = treeSet.higher(BigInteger.valueOf(rand));
                 BigInteger dbtsv = diskBinaryTreeSet.higher(BigInteger.valueOf(rand));
@@ -679,6 +719,40 @@ public class DiskBinaryTreeSet<E extends Serializable & Comparable<E>> implement
                     continue;
                 } else {
                     throw new IllegalStateException("Querying higher of " + rand + " failed! TreeSet reported " + tsv + ", but DiskBinaryTreeSet reported " + dbtsv);
+                }
+            }
+        }
+
+        System.out.println("PASS! :)");
+    }
+
+    private static void testCeiling_RandomInsertions() throws Exception {
+        System.out.println("Running testCeiling_RandomInsertions");
+        Files.deleteIfExists(Paths.get("diskBinaryTreeSetTest.dbts"));
+        DiskBinaryTreeSet<BigInteger> diskBinaryTreeSet = new DiskBinaryTreeSet<>(new File("diskBinaryTreeSetTest.dbts"));
+
+        TreeSet<BigInteger> treeSet = new TreeSet<>();
+        Random r = new Random();
+        for (int n = 0; n < 5; n++) {
+            for (int i = 0; i < 250; i++) {
+                int rand = 50+r.nextInt(250);
+                System.out.println("Inserting " + rand);
+                treeSet.add(BigInteger.valueOf(rand));
+                diskBinaryTreeSet.add(BigInteger.valueOf(rand));
+            }
+
+            for (int i = 0; i < 1000; i++) {
+                int rand = r.nextInt(350);
+                System.out.print("Querying ceiling of " + rand + "...");
+                BigInteger tsv = treeSet.ceiling(BigInteger.valueOf(rand));
+                BigInteger dbtsv = diskBinaryTreeSet.ceiling(BigInteger.valueOf(rand));
+                System.out.println("TreeSet reported " + tsv + ", and DiskBinaryTreeSet reported " + dbtsv);
+                if (tsv == null && dbtsv == null) {
+                    continue;
+                } else if (tsv != null && tsv.compareTo(dbtsv) == 0) {
+                    continue;
+                } else {
+                    throw new IllegalStateException("Querying ceiling of " + rand + " failed! TreeSet reported " + tsv + ", but DiskBinaryTreeSet reported " + dbtsv);
                 }
             }
         }
@@ -756,6 +830,7 @@ public class DiskBinaryTreeSet<E extends Serializable & Comparable<E>> implement
         testContainsAndSize_RandomInsertions();
         testContainsAndSize_InOrderInsertions();
         testHigher_RandomInsertions();
+        testCeiling_RandomInsertions();
         testFirst_RandomInsertions();
         testIterator_RandomInsertions();
 
