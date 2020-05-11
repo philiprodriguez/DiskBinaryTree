@@ -562,6 +562,23 @@ public class DiskBinaryTreeSet<E extends Serializable & Comparable<E>> implement
         }
     }
 
+    public synchronized E last() {
+        try {
+            if (isEmpty()) {
+                throw new NoSuchElementException();
+            }
+            long currentAddress = getRootAddress();
+            while(getRightPointer(currentAddress) != -1) {
+                currentAddress = getRightPointer(currentAddress);
+            }
+            return getPayloadObject(currentAddress);
+        } catch (ClassNotFoundException exc) {
+            throw new IllegalStateException("Failed to parse node payload, cannot recover.");
+        } catch (IOException exc) {
+            throw new IllegalStateException("Failed to access tree on disk, cannot recover.");
+        }
+    }
+
     @Override
     public synchronized boolean remove(Object o) {
         throw new UnsupportedOperationException("Not implemented! Cannot remove from DiskBinaryTreeSet!");
@@ -788,6 +805,34 @@ public class DiskBinaryTreeSet<E extends Serializable & Comparable<E>> implement
         System.out.println("PASS! :)");
     }
 
+        private static void testLast_RandomInsertions() throws Exception {
+        System.out.println("Running testLast_RandomInsertions");
+        for (int n = 0; n < 5; n++) {
+            Files.deleteIfExists(Paths.get("diskBinaryTreeSetTest.dbts"));
+            DiskBinaryTreeSet<BigInteger> diskBinaryTreeSet = new DiskBinaryTreeSet<>(new File("diskBinaryTreeSetTest.dbts"));
+
+            TreeSet<BigInteger> treeSet = new TreeSet<>();
+            Random r = new Random();
+            
+            for (int i = 0; i < 250; i++) {
+                int rand = r.nextInt();
+                System.out.println("Inserting " + rand);
+                treeSet.add(BigInteger.valueOf(rand));
+                diskBinaryTreeSet.add(BigInteger.valueOf(rand));
+            }
+
+            System.out.print("Testing last...");
+            BigInteger tsv = treeSet.last();
+            BigInteger dbtsv = diskBinaryTreeSet.last();
+            System.out.println("TreeSet says " + tsv + " and DiskBinaryTreeSet says " + dbtsv);
+            if (!tsv.equals(dbtsv)) {
+                throw new IllegalStateException("Last failed! TreeSet says " + tsv + " but DiskBinaryTreeSet says " + dbtsv);
+            }
+        }
+
+        System.out.println("PASS! :)");
+    }
+
     private static void testIterator_RandomInsertions() throws Exception {
         System.out.println("Running testIterator_RandomInsertions");
         Files.deleteIfExists(Paths.get("diskBinaryTreeSetTest.dbts"));
@@ -833,6 +878,7 @@ public class DiskBinaryTreeSet<E extends Serializable & Comparable<E>> implement
         testCeiling_RandomInsertions();
         testFirst_RandomInsertions();
         testIterator_RandomInsertions();
+        testLast_RandomInsertions();
 
         Files.deleteIfExists(Paths.get("diskBinaryTreeSetTest.dbts"));
         System.out.println("PASS ALL! :)");
