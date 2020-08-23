@@ -545,6 +545,46 @@ public class DiskBinaryTreeSet<E extends Serializable & Comparable<E>> implement
         }
     }
 
+    private synchronized E floorRec(long currentAddress, E value) throws IOException, ClassNotFoundException {
+        if (currentAddress == -1) {
+            // No subtree here.
+            return null;
+        }
+        E currentValue = getPayloadObject(currentAddress);
+        if (currentValue.compareTo(value) > 0) {
+            // We are greater than value, so it could not be us, but it could be someone
+            // in our left subtree. If our left subtree's got no answer, then we also have no answer.
+            return floorRec(getLeftPointer(currentAddress), value);
+        } else if (currentValue.compareTo(value) < 0) {
+            // Current value is too small, it could be us, but it could also be in our right subtree.
+            E valRight = floorRec(getRightPointer(currentAddress), value);
+            if (valRight == null) {
+                // We're the answer.
+                return currentValue;
+            } else {
+                // Better answer was found in our left subtree.
+                return valRight;
+            }
+        } else {
+            // Exact match. We are the answer.
+            return currentValue;
+        }
+    }
+
+    public synchronized E floor(E value) {
+        try {
+            if (isEmpty()) {
+                return null;
+            }
+
+            return floorRec(getRootAddress(), value);
+        } catch (ClassNotFoundException exc) {
+            throw new IllegalStateException("Failed to parse node payload, cannot recover.");
+        } catch (IOException exc) {
+            throw new IllegalStateException("Failed to access tree on disk, cannot recover.");
+        }
+    }
+
     public synchronized E first() {
         try {
             if (isEmpty()) {
